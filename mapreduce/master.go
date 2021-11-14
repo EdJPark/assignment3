@@ -10,6 +10,26 @@ type WorkerInfo struct {
 }
 
 
+func AssignJobsToWorkers(mr *MapReduce, doneChannel chan int, job JobType, nJobs int, nJobsOther int) {
+	for i := 0; i < nJobs; i++ {
+		go func(jobNum int) {
+			worker := <-mr.registerChannel
+			
+			args := &DoJobArgs{mr.file, job, jobNum, nJobsOther}
+			var reply DoJobReply
+			
+			ok := call(worker, "Worker.DoJob", args, &reply)
+			
+			if ok == true {
+				doneChannel <- 1
+				mr. registerChannel <- worker
+				
+			}
+		}(i)
+	}
+}
+
+
 // Clean up all workers by sending a Shutdown RPC to each one of them Collect
 // the number of jobs each work has performed.
 func (mr *MapReduce) KillWorkers() *list.List {
